@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pattern Mode -->
+    <string-array name="pattern_mode_names">
+        <item>Scattered</item>
+        <item>Grid</item>
+        <item>Clustered (5)</item>
+        <item>Clustered (10)</item>
+        <item>Mixed Items</item>
+    </string-array>
+
+    <string-array name="pattern_mode_values">
+        <item>SCATTERED</item>
+        <item>GRID</item>
+        <item>CLUSTERED_5</item>
+        <item>CLUSTERED_10</item>
+        <item>MIXED_ITEMS</item>
+    </string-array>
+
+    <!-- Item Theme -->
+    <string-array name="item_theme_names">
+        <item>Animals</item>
+        <item>Shapes</item>
+        <item>Fruits</item>
+        <item>Emoji</item>
+        <item>Numbers</item>
+    </string-array>
+
+    <string-array name="item_theme_values">
+        <item>ANIMALS</item>
+        <item>SHAPES</item>
+        <item>FRUITS</item>
+        <item>EMOJI</item>
+        <item>NUMBERS</item>
+    </string-array>
+
+    <!-- Color Theme -->
+    <string-array name="color_theme_names">
+        <item>Default</item>
+        <item>Dark</item>
+        <item>Pastel</item>
+        <item>High Contrast</item>
+    </string-array>
+
+    <string-array name="color_theme_values">
+        <item>DEFAULT</item>
+        <item>DARK</item>
+        <item>PASTEL</item>
+        <item>HIGH_CONTRAST</item>
+    </string-array>
+
+    <!-- Background Style -->
+    <string-array name="background_names">
+        <item>Plain</item>
+        <item>Gradient</item>
+        <item>Subtle Pattern</item>
+    </string-array>
+
+    <string-array name="background_values">
+        <item>plain</item>
+        <item>gradient</item>
+        <item>pattern</item>
+    </string-array>
+</resources>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        android:key="default_pattern_mode"
+        android:title="@string/default_pattern_mode"
+        android:entries="@array/pattern_mode_names"
+        android:entryValues="@array/pattern_mode_values"
+        android:defaultValue="SCATTERED"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:key="item_theme"
+        android:title="@string/item_theme"
+        android:entries="@array/item_theme_names"
+        android:entryValues="@array/item_theme_values"
+        android:defaultValue="ANIMALS"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:key="color_theme"
+        android:title="@string/color_theme"
+        android:entries="@array/color_theme_names"
+        android:entryValues="@array/color_theme_values"
+        android:defaultValue="DEFAULT"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:key="background_style"
+        android:title="@string/background_style"
+        android:entries="@array/background_names"
+        android:entryValues="@array/background_values"
+        android:defaultValue="plain"
+        app:useSimpleSummaryProvider="true" />
+
+    <SeekBarPreference
+        android:key="answer_range_percent"
+        android:title="@string/answer_range_percent"
+        android:summary="@string/answer_range_percent_summary"
+        android:defaultValue="25"
+        android:min="10"
+        android:max="60"
+        app:showSeekBarValue="true"
+        app:updatesContinuously="true" />
+
+    <PreferenceCategory
+        android:title="@string/about">
+
+        <Preference
+            android:key="about_app"
+            android:title="@string/about_countthis"
+            android:summary="@string/version_unknown"
+            app:selectable="false" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

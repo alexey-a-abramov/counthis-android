@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material legacy names (referenced by theme) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#5C6BC0</color>
+    <color name="purple_700">#3949AB</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Feedback — lighter colors work on both light and dark backgrounds -->
+    <color name="correct_green">#4CAF50</color>
+    <color name="wrong_red">#EF5350</color>
+
+    <!-- BACKWARD COMPATIBILITY ALIASES (for XML layouts using old names) -->
+    <color name="background">@color/default_background</color>
+    <color name="game_container_bg">@color/default_game_container_bg</color>
+    <color name="settings_background">@color/default_settings_background</color>
+    <color name="ready_button">@color/default_ready_button</color>
+    <color name="ready_button_pressed">@color/default_ready_button_pressed</color>
+    <color name="text_primary">@color/default_text_primary</color>
+    <color name="text_secondary">@color/default_text_secondary</color>
+    <color name="header_bg">@color/default_header_bg</color>
+    <color name="header_text">@color/default_header_text</color>
+    <color name="answer_a">@color/default_answer_a</color>
+    <color name="answer_b">@color/default_answer_b</color>
+    <color name="answer_c">@color/default_answer_c</color>
+    <color name="answer_d">@color/default_answer_d</color>
+
+    <!-- DEFAULT THEME -->
+    <!-- Surfaces -->
+    <!-- Neutral grey keeps coloured buttons from blending into the background -->
+    <color name="default_background">#EEEEEE</color>
+    <color name="default_game_container_bg">#FFFFFF</color>
+    <color name="default_settings_background">#FFFFFF</color>
+
+    <!-- Ready button -->
+    <color name="default_ready_button">#FF6D00</color>
+    <color name="default_ready_button_pressed">#E65100</color>
+
+    <!-- Text — near-black primary, dark-grey secondary for readable contrast -->
+    <color name="default_text_primary">#1A1A1A</color>
+    <color name="default_text_secondary">#505050</color>
+
+    <!-- Header — deep indigo, clearly distinct from all button colours -->
+    <color name="default_header_bg">#1A237E</color>
+    <color name="default_header_text">#FFFFFF</color>
+
+    <!--
+        Answer buttons — four hues spread evenly around the colour wheel,
+        each vivid enough to pop on the grey background, all dark enough
+        for white text (contrast ≥ 4.5 : 1).
+
+          A  Blue        hue ~210°
+          B  Deep-orange hue  ~20°
+          C  Teal        hue ~170°
+          D  Purple      hue ~285°
+    -->
+    <color name="default_answer_a">#1565C0</color>
+    <color name="default_answer_b">#BF360C</color>
+    <color name="default_answer_c">#00695C</color>
+    <color name="default_answer_d">#6A1B9A</color>
+
+    <!-- DARK THEME -->
+    <!-- Backgrounds & Surfaces — Material Design dark baseline -->
+    <color name="dark_background">#121212</color>
+    <color name="dark_game_container_bg">#1E1E1E</color>
+    <color name="dark_settings_background">#1E1E1E</color>
+
+    <!-- Ready button — lighter orange for visibility on dark backgrounds -->
+    <color name="dark_ready_button">#FF8A50</color>
+    <color name="dark_ready_button_pressed">#FF6D00</color>
+
+    <!-- Text — light colors for readability on dark backgrounds -->
+    <color name="dark_text_primary">#E1E1E1</color>
+    <color name="dark_text_secondary">#B0B0B0</color>
+
+    <!-- Header — indigo works well on dark, maintains brand consistency -->
+    <color name="dark_header_bg">#3949AB</color>
+    <color name="dark_header_text">#FFFFFF</color>
+
+    <!--
+        Answer buttons — lighter versions for dark backgrounds
+        maintaining same hue distribution for color-blind accessibility
+    -->
+    <color name="dark_answer_a">#42A5F5</color>
+    <color name="dark_answer_b">#FF7043</color>
+    <color name="dark_answer_c">#26A69A</color>
+    <color name="dark_answer_d">#AB47BC</color>
+</resources>

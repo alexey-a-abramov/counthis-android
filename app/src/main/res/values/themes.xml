@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.CountThis" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="colorPrimary">@color/header_bg</item>
+        <item name="colorPrimaryVariant">#0D1547</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/answer_a</item>
+        <item name="colorSecondaryVariant">@color/answer_a</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:colorBackground">@color/settings_background</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+    </style>
+</resources>
