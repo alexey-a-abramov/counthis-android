@@ -306,13 +306,8 @@ class MainActivity : AppCompatActivity() {
     private fun generateAnswers(numOptions: Int = 4, maxAttempts: Int = 200): List<Int> {
         val correct = currentItemCount
 
-        // Adaptive range: wider for small X so we can avoid sequential runs
-        val baseOffset = when {
-            correct <= 5 -> 4
-            correct <= 15 -> 5
-            correct <= 30 -> 6
-            else -> maxOf(6, (correct * 0.15).toInt())
-        }
+        // 25% dispersion with minimum of 4 for small values to avoid sequential runs
+        val baseOffset = maxOf(4, (correct * 0.25).toInt())
 
         for (attempt in 0 until maxAttempts) {
             val maxOffset = baseOffset + (attempt / 30)  // expand range if stuck
