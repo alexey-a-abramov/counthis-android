@@ -36,10 +36,10 @@
 
     <!-- Color Theme -->
     <string-array name="color_theme_names">
-        <item>Default</item>
-        <item>Dark</item>
-        <item>Pastel</item>
-        <item>High Contrast</item>
+        <item>Default (Blue &amp; Purple)</item>
+        <item>Dark (Charcoal &amp; Teal)</item>
+        <item>Pastel (Soft Colors)</item>
+        <item>High Contrast (Black &amp; Yellow)</item>
     </string-array>
 
     <string-array name="color_theme_values">

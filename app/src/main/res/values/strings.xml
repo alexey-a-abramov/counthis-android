@@ -23,17 +23,40 @@
     <string name="last_session">LAST SESSION</string>
     <string name="statistics">Statistics</string>
 
-    <!-- Settings -->
-    <string name="default_pattern_mode">Default Pattern Mode</string>
-    <string name="item_theme">Item Theme</string>
+    <!-- Settings Categories -->
+    <string name="category_appearance">Appearance</string>
+    <string name="category_appearance_summary">Customize visual themes and styles</string>
+    <string name="category_gameplay">Gameplay</string>
+    <string name="category_gameplay_summary">Adjust difficulty and game mechanics</string>
+    <string name="category_information">Information</string>
+
+    <!-- Settings - Appearance -->
     <string name="color_theme">Color Theme</string>
+    <string name="color_theme_summary">Choose your preferred color scheme</string>
     <string name="background_style">Background Style</string>
-    <string name="answer_range_percent">Answer Range (±%)</string>
-    <string name="answer_range_percent_summary">Controls how far wrong options can be from the correct answer.</string>
+    <string name="background_style_summary">Plain, gradient, or patterned backgrounds</string>
+    <string name="item_theme">Item Theme</string>
+    <string name="item_theme_summary">Select which items to count (animals, shapes, etc.)</string>
+
+    <!-- Settings - Gameplay -->
+    <string name="default_pattern_mode">Pattern Layout</string>
+    <string name="default_pattern_mode_summary">How items are arranged on screen</string>
+    <string name="answer_range_percent">Answer Range</string>
+    <string name="answer_range_percent_summary">Difficulty: %1$s%% dispersion. Lower = harder (options closer together)</string>
+
+    <!-- Settings - About -->
     <string name="about">About</string>
     <string name="about_countthis">CountThis</string>
-    <string name="version_format">Version %1$s (%2$d)</string>
+    <string name="version_format">Version %1$s (build %2$d)</string>
     <string name="version_unknown">Version unavailable</string>
+
+    <!-- Settings - Algorithm Info -->
+    <string name="algorithm_info_title">Answer Generation Algorithm</string>
+    <string name="algorithm_info_summary">Uses adaptive positioning with 1.4× min/max ratio, prevents consecutive sequences, ensures 2+ spacing between options. Correct answer appears at MIN (16-28%), MID (46-58%), MAX (16-28%) positions.</string>
+
+    <!-- Settings - License -->
+    <string name="license_title">License</string>
+    <string name="license_summary">Business Source License 1.1 with 5-year change date</string>
 
     <!-- Statistics -->
     <string name="accuracy">Accuracy</string>
