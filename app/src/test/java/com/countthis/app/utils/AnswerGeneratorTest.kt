@@ -79,7 +79,7 @@ class AnswerGeneratorTest {
     }
 
     @Test
-    fun `randomizes correct answer position`() {
+    fun `randomizes correct answer position in display order`() {
         val correct = 50
         val positions = mutableMapOf<Int, Int>()
 
@@ -98,6 +98,56 @@ class AnswerGeneratorTest {
             assertTrue(
                 "Position $pos appeared $count times out of 100, should be > 10 for uniform distribution",
                 count > 10
+            )
+        }
+    }
+
+    @Test
+    fun `correct answer appears at all sorted positions including extremes`() {
+        val testCases = listOf(10, 20, 50, 100)
+
+        testCases.forEach { correct ->
+            val sortedPositions = mutableMapOf<Int, Int>()
+
+            // Generate 200 samples to get good statistics
+            repeat(200) {
+                val result = AnswerGenerator.generateOptions(correct)
+                val sorted = result.sorted()
+                val positionInSorted = sorted.indexOf(correct)
+                sortedPositions[positionInSorted] = sortedPositions.getOrDefault(positionInSorted, 0) + 1
+            }
+
+            println("\nCorrect=$correct - Sorted position distribution:")
+            for (pos in 0..3) {
+                val count = sortedPositions.getOrDefault(pos, 0)
+                val percentage = (count * 100.0 / 200.0)
+                val label = when(pos) {
+                    0 -> "MIN"
+                    3 -> "MAX"
+                    else -> "MID"
+                }
+                println("  Position $pos ($label): $count times (%.1f%%)".format(percentage))
+            }
+
+            // Verify correct appears as minimum (position 0)
+            val minCount = sortedPositions.getOrDefault(0, 0)
+            assertTrue(
+                "For correct=$correct, should appear as MIN at least 20 times out of 200 (got $minCount)",
+                minCount >= 20
+            )
+
+            // Verify correct appears as maximum (position 3)
+            val maxCount = sortedPositions.getOrDefault(3, 0)
+            assertTrue(
+                "For correct=$correct, should appear as MAX at least 20 times out of 200 (got $maxCount)",
+                maxCount >= 20
+            )
+
+            // Verify correct appears in middle positions
+            val midCount = sortedPositions.getOrDefault(1, 0) + sortedPositions.getOrDefault(2, 0)
+            assertTrue(
+                "For correct=$correct, should appear in MIDDLE at least 40 times out of 200 (got $midCount)",
+                midCount >= 40
             )
         }
     }
@@ -223,13 +273,21 @@ class AnswerGeneratorTest {
         val samples = listOf(5, 10, 20, 50, 100, 200)
 
         samples.forEach { correct ->
-            val result = AnswerGenerator.generateOptions(correct)
-            val sorted = result.sorted()
-            val ratio = sorted.last().toDouble() / sorted.first().toDouble()
-            val spread = sorted.last() - sorted.first()
+            repeat(3) { // Generate 3 samples per value to show variety
+                val result = AnswerGenerator.generateOptions(correct)
+                val sorted = result.sorted()
+                val ratio = sorted.last().toDouble() / sorted.first().toDouble()
+                val spread = sorted.last() - sorted.first()
+                val sortedPos = sorted.indexOf(correct)
+                val posLabel = when(sortedPos) {
+                    0 -> "MIN"
+                    sorted.size - 1 -> "MAX"
+                    else -> "mid"
+                }
 
-            println("correct=$correct → options=$result (sorted=$sorted)")
-            println("  spread=$spread, ratio=%.2f".format(ratio))
+                println("correct=$correct → $sorted (pos=$sortedPos/$posLabel, spread=$spread, ratio=%.2f)".format(ratio))
+            }
+            println()
         }
         println("=========================================\n")
     }
