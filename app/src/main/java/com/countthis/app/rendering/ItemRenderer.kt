@@ -1,8 +1,10 @@
 package com.countthis.app.rendering
 
 import android.content.Context
+import android.graphics.drawable.PictureDrawable
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.caverock.androidsvg.SVG
 import com.countthis.app.R
 import com.countthis.app.enums.ItemTheme
 import com.countthis.app.enums.PatternMode
@@ -11,6 +13,10 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 class ItemRenderer(private val context: Context) {
+    private data class ItemAsset(
+        val drawableRes: Int? = null,
+        val svgRawRes: Int? = null
+    )
 
     private val animalDrawables = listOf(
         R.drawable.ic_cat,
@@ -29,6 +35,19 @@ class ItemRenderer(private val context: Context) {
         R.drawable.ic_triangle,
         R.drawable.ic_hexagon
     )
+
+    private val funnySvgAssets = listOf(
+        ItemAsset(svgRawRes = R.raw.funny_81398),
+        ItemAsset(svgRawRes = R.raw.funny_36564),
+        ItemAsset(svgRawRes = R.raw.funny_81394),
+        ItemAsset(svgRawRes = R.raw.funny_87694),
+        ItemAsset(svgRawRes = R.raw.funny_25626),
+        ItemAsset(svgRawRes = R.raw.funny_67049),
+        ItemAsset(svgRawRes = R.raw.funny_39121),
+        ItemAsset(svgRawRes = R.raw.funny_87962)
+    )
+
+    private val svgDrawableCache = mutableMapOf<Int, PictureDrawable>()
 
     fun renderItems(
         container: FrameLayout,
@@ -62,7 +81,7 @@ class ItemRenderer(private val context: Context) {
         containerWidth: Float,
         containerHeight: Float
     ) {
-        val selectedDrawable = getRandomDrawable(theme)
+        val selectedAsset = getRandomAsset(theme)
         val usedPositions = mutableListOf<Pair<Float, Float>>()
 
         val itemSize = calculateItemSize(count)
@@ -70,7 +89,7 @@ class ItemRenderer(private val context: Context) {
         val maxAttempts = if (count > 50) 200 else 100
 
         for (i in 0 until count) {
-            val imageView = createImageView(selectedDrawable, itemSize)
+            val imageView = createImageView(selectedAsset, itemSize)
 
             var position: Pair<Float, Float>
             var attempts = 0
@@ -100,7 +119,7 @@ class ItemRenderer(private val context: Context) {
         containerWidth: Float,
         containerHeight: Float
     ) {
-        val selectedDrawable = getRandomDrawable(theme)
+        val selectedAsset = getRandomAsset(theme)
 
         val columns = ceil(sqrt(count.toDouble())).toInt()
         val rows = ceil(count.toDouble() / columns).toInt()
@@ -119,7 +138,7 @@ class ItemRenderer(private val context: Context) {
             for (col in 0 until columns) {
                 if (itemIndex >= count) break
 
-                val imageView = createImageView(selectedDrawable, itemSize)
+                val imageView = createImageView(selectedAsset, itemSize)
 
                 // Center item in cell with slight random offset
                 val centerX = col * cellWidth + (cellWidth - itemSize) / 2
@@ -145,7 +164,7 @@ class ItemRenderer(private val context: Context) {
         containerHeight: Float,
         clusterSize: Int
     ) {
-        val selectedDrawable = getRandomDrawable(theme)
+        val selectedAsset = getRandomAsset(theme)
         val itemSize = calculateItemSize(count)
 
         val numClusters = ceil(count.toDouble() / clusterSize).toInt()
@@ -175,7 +194,7 @@ class ItemRenderer(private val context: Context) {
             val itemsInThisCluster = minOf(clusterSize, count - itemIndex)
 
             for (i in 0 until itemsInThisCluster) {
-                val imageView = createImageView(selectedDrawable, itemSize)
+                val imageView = createImageView(selectedAsset, itemSize)
 
                 // Place items in a circle around cluster center
                 val angle = (i.toFloat() / itemsInThisCluster) * 2 * Math.PI
@@ -200,8 +219,8 @@ class ItemRenderer(private val context: Context) {
         containerWidth: Float,
         containerHeight: Float
     ) {
-        val drawables = getThemeDrawables(theme)
-        val targetDrawable = drawables.random()
+        val assets = getThemeAssets(theme)
+        val targetAsset = assets.random()
         val targetCount = Random.nextInt(
             maxOf(1, count / 3),
             maxOf(2, (count * 2) / 3)
@@ -213,18 +232,15 @@ class ItemRenderer(private val context: Context) {
         val maxAttempts = if (count > 50) 200 else 100
 
         var targetPlaced = 0
-        var otherPlaced = 0
-
         for (i in 0 until count) {
-            val drawable = if (targetPlaced < targetCount) {
+            val asset = if (targetPlaced < targetCount) {
                 targetPlaced++
-                targetDrawable
+                targetAsset
             } else {
-                otherPlaced++
-                (drawables - targetDrawable).random()
+                (assets - targetAsset).ifEmpty { assets }.random()
             }
 
-            val imageView = createImageView(drawable, itemSize)
+            val imageView = createImageView(asset, itemSize)
 
             var position: Pair<Float, Float>
             var attempts = 0
@@ -257,25 +273,59 @@ class ItemRenderer(private val context: Context) {
         }
     }
 
-    private fun createImageView(drawableRes: Int, size: Float): ImageView {
+    private fun createImageView(asset: ItemAsset, size: Float): ImageView {
         val imageView = ImageView(context)
-        imageView.setImageResource(drawableRes)
         imageView.layoutParams = FrameLayout.LayoutParams(
             size.toInt(),
             size.toInt()
         )
+        imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
+        val drawableRes = asset.drawableRes
+        val svgRawRes = asset.svgRawRes
+
+        if (drawableRes != null) {
+            imageView.setImageResource(drawableRes)
+        } else if (svgRawRes != null) {
+            val svgDrawable = getSvgDrawable(svgRawRes)
+            if (svgDrawable != null) {
+                imageView.setLayerType(ImageView.LAYER_TYPE_SOFTWARE, null)
+                imageView.setImageDrawable(svgDrawable)
+            } else {
+                imageView.setImageResource(R.drawable.ic_star)
+            }
+        } else {
+            imageView.setImageResource(R.drawable.ic_star)
+        }
+
         return imageView
     }
 
-    private fun getRandomDrawable(theme: ItemTheme): Int {
-        return getThemeDrawables(theme).random()
+    private fun getRandomAsset(theme: ItemTheme): ItemAsset {
+        return getThemeAssets(theme).random()
     }
 
-    private fun getThemeDrawables(theme: ItemTheme): List<Int> {
+    private fun getThemeAssets(theme: ItemTheme): List<ItemAsset> {
         return when (theme) {
-            ItemTheme.ANIMALS -> animalDrawables
-            ItemTheme.SHAPES -> shapeDrawables
-            ItemTheme.FRUITS, ItemTheme.EMOJI, ItemTheme.NUMBERS -> animalDrawables // Fallback for now
+            ItemTheme.ANIMALS -> animalDrawables.map { ItemAsset(drawableRes = it) }
+            ItemTheme.SHAPES -> shapeDrawables.map { ItemAsset(drawableRes = it) }
+            ItemTheme.FRUITS, ItemTheme.EMOJI, ItemTheme.NUMBERS -> funnySvgAssets
+        }
+    }
+
+    private fun getSvgDrawable(rawRes: Int): PictureDrawable? {
+        return svgDrawableCache[rawRes] ?: run {
+            try {
+                context.resources.openRawResource(rawRes).use { input ->
+                    val svg = SVG.getFromInputStream(input)
+                    val picture = svg.renderToPicture()
+                    val drawable = PictureDrawable(picture)
+                    svgDrawableCache[rawRes] = drawable
+                    drawable
+                }
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 

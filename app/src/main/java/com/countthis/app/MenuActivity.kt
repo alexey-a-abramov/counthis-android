@@ -6,31 +6,38 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.countthis.app.databinding.ActivityMenuBinding
 import com.countthis.app.enums.DifficultyPreset
 import com.countthis.app.enums.GameMode
 import com.countthis.app.managers.PreferencesHelper
+import com.countthis.app.managers.RecentGameModeHandler
 import com.countthis.app.managers.StatisticsManager
 import com.countthis.app.managers.ThemeManager
 
 class MenuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMenuBinding
     private lateinit var prefsHelper: PreferencesHelper
+    private lateinit var recentModeHandler: RecentGameModeHandler
     private lateinit var statsManager: StatisticsManager
     private lateinit var themeManager: ThemeManager
 
     private val presets = DifficultyPreset.values()
     private var selectedPreset = DifficultyPreset.BEGINNER
+    private var recentMode = GameMode.TRAINING
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         prefsHelper = PreferencesHelper(this)
+        recentModeHandler = RecentGameModeHandler(this)
         statsManager = StatisticsManager(this)
         themeManager = ThemeManager(this)
+        selectedPreset = prefsHelper.getSelectedDifficultyPreset()
+        recentMode = recentModeHandler.getRecentMode()
 
         // Apply theme to UI
         applyTheme()
@@ -43,6 +50,10 @@ class MenuActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        selectedPreset = prefsHelper.getSelectedDifficultyPreset()
+        recentMode = recentModeHandler.getRecentMode()
+        binding.levelSpinner.setSelection(presets.indexOfFirst { it == selectedPreset })
+        updateRecentModeHighlight()
         updateLastSession()
     }
 
@@ -92,12 +103,12 @@ class MenuActivity : AppCompatActivity() {
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, names)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.levelSpinner.adapter = adapter
-        // Default to BEGINNER (index 1)
-        binding.levelSpinner.setSelection(presets.indexOfFirst { it == DifficultyPreset.BEGINNER })
+        binding.levelSpinner.setSelection(presets.indexOfFirst { it == selectedPreset })
 
         binding.levelSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 selectedPreset = presets[position]
+                prefsHelper.saveSelectedDifficultyPreset(selectedPreset)
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -105,17 +116,18 @@ class MenuActivity : AppCompatActivity() {
 
     private fun setupGameTypeButtons() {
         binding.trainingButton.setOnClickListener {
-            startGame(GameMode.TRAINING)
+            onModeSelected(GameMode.TRAINING)
         }
         binding.timeAttackButton.setOnClickListener {
-            startGame(GameMode.TIME_ATTACK)
+            onModeSelected(GameMode.TIME_ATTACK)
         }
         binding.perfectRunButton.setOnClickListener {
-            startGame(GameMode.PERFECT_RUN)
+            onModeSelected(GameMode.PERFECT_RUN)
         }
         binding.countdownButton.setOnClickListener {
-            startGame(GameMode.COUNTDOWN)
+            onModeSelected(GameMode.COUNTDOWN)
         }
+        updateRecentModeHighlight()
     }
 
     private fun setupBottomButtons() {
@@ -134,6 +146,32 @@ class MenuActivity : AppCompatActivity() {
             putExtra("PATTERN_MODE", prefsHelper.getDefaultPatternMode().name)
         }
         startActivity(intent)
+    }
+
+    private fun onModeSelected(mode: GameMode) {
+        recentMode = mode
+        recentModeHandler.save(mode)
+        updateRecentModeHighlight()
+        startGame(mode)
+    }
+
+    private fun updateRecentModeHighlight() {
+        val buttons = mapOf(
+            GameMode.TRAINING to binding.trainingButton,
+            GameMode.TIME_ATTACK to binding.timeAttackButton,
+            GameMode.PERFECT_RUN to binding.perfectRunButton,
+            GameMode.COUNTDOWN to binding.countdownButton
+        )
+
+        buttons.forEach { (mode, button) ->
+            styleModeButton(button, mode == recentMode)
+        }
+    }
+
+    private fun styleModeButton(button: Button, isRecent: Boolean) {
+        button.alpha = if (isRecent) 1f else 0.88f
+        button.scaleX = if (isRecent) 1.03f else 1f
+        button.scaleY = if (isRecent) 1.03f else 1f
     }
 
     private fun updateLastSession() {

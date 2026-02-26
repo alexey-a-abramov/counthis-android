@@ -30,19 +30,21 @@ object AnswerGenerator {
     fun generateOptions(
         correct: Int,
         numOptions: Int = 4,
-        maxAttempts: Int = 200
+        maxAttempts: Int = 200,
+        answerRangePercent: Int = 25
     ): List<Int> {
         require(correct >= 1) { "Correct value must be >= 1" }
         require(numOptions >= 2) { "Must have at least 2 options" }
+        val clampedRangePercent = answerRangePercent.coerceIn(10, 60)
 
         // For very small numbers (1-5), use simpler algorithm without position forcing
         // as certain positions may be mathematically impossible
         if (correct <= 5) {
-            return generateOptionsSimple(correct, numOptions, maxAttempts)
+            return generateOptionsSimple(correct, numOptions, maxAttempts, clampedRangePercent)
         }
 
-        // Adaptive base offset: 25% with minimum of 4 to avoid sequential runs
-        val baseOffset = maxOf(4, (correct * 0.25).toInt())
+        // Adaptive base offset derived from settings with minimum of 4 to avoid sequential runs
+        val baseOffset = maxOf(4, (correct * (clampedRangePercent / 100.0)).toInt())
 
         // Randomly choose target position - this is our primary goal
         val primaryPosition = Random.nextInt(numOptions)
@@ -76,9 +78,10 @@ object AnswerGenerator {
     private fun generateOptionsSimple(
         correct: Int,
         numOptions: Int,
-        maxAttempts: Int
+        maxAttempts: Int,
+        answerRangePercent: Int
     ): List<Int> {
-        val baseOffset = 4 // Fixed offset for small numbers
+        val baseOffset = maxOf(4, (correct * (answerRangePercent / 100.0)).toInt())
 
         for (attempt in 0 until maxAttempts) {
             val maxOffset = baseOffset + (attempt / 5)

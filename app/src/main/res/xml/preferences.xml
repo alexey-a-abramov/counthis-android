@@ -57,6 +57,12 @@
             app:showSeekBarValue="true"
             app:updatesContinuously="true" />
 
+        <SwitchPreferenceCompat
+            android:key="meditative_mode"
+            android:title="@string/meditative_mode"
+            android:summary="@string/meditative_mode_summary"
+            android:defaultValue="false" />
+
     </PreferenceCategory>
 
     <!-- Information -->

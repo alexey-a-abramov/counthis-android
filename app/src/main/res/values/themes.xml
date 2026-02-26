@@ -11,6 +11,21 @@
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:colorBackground">@color/settings_background</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+        <item name="preferenceTheme">@style/PreferenceTheme.CountThis</item>
+    </style>
+
+    <!-- Custom Preference Theme with proper contrast -->
+    <style name="PreferenceTheme.CountThis" parent="PreferenceThemeOverlay.v14.Material">
+        <!-- Preference titles - high contrast -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+
+        <!-- Preference summaries - medium contrast, still readable -->
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- Category titles - accent color for hierarchy -->
+        <item name="colorAccent">@color/purple_500</item>
+
+        <!-- Preference background -->
+        <item name="android:background">@color/settings_background</item>
     </style>
 </resources>

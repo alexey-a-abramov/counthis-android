@@ -3,6 +3,7 @@ package com.countthis.app.managers
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import com.countthis.app.enums.DifficultyPreset
 import com.countthis.app.enums.PatternMode
 import com.countthis.app.enums.ItemTheme
 import com.countthis.app.enums.ColorTheme
@@ -43,5 +44,23 @@ class PreferencesHelper(context: Context) {
 
     fun getAnswerRangePercent(): Int {
         return prefs.getInt("answer_range_percent", 25).coerceIn(10, 60)
+    }
+
+    fun isMeditativeModeEnabled(): Boolean {
+        return prefs.getBoolean("meditative_mode", false)
+    }
+
+    fun saveSelectedDifficultyPreset(preset: DifficultyPreset) {
+        prefs.edit().putString("selected_difficulty_preset", preset.name).apply()
+    }
+
+    fun getSelectedDifficultyPreset(): DifficultyPreset {
+        val value = prefs.getString("selected_difficulty_preset", DifficultyPreset.BEGINNER.name)
+            ?: DifficultyPreset.BEGINNER.name
+        return try {
+            DifficultyPreset.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            DifficultyPreset.BEGINNER
+        }
     }
 }

@@ -42,7 +42,9 @@
     <string name="default_pattern_mode">Pattern Layout</string>
     <string name="default_pattern_mode_summary">How items are arranged on screen</string>
     <string name="answer_range_percent">Answer Range</string>
-    <string name="answer_range_percent_summary">Difficulty: %1$s%% dispersion. Lower = harder (options closer together)</string>
+    <string name="answer_range_percent_summary">Difficulty: %1$d%% dispersion. Lower = harder (options closer together)</string>
+    <string name="meditative_mode">Meditative Mode</string>
+    <string name="meditative_mode_summary">Fewer items, smoother 0.25s transitions, and ambient sound</string>
 
     <!-- Settings - About -->
     <string name="about">About</string>

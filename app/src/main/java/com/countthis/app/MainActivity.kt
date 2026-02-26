@@ -2,13 +2,17 @@ package com.countthis.app
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
 import android.content.res.ColorStateList
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import com.countthis.app.challenges.ChallengeHandler
 import com.countthis.app.challenges.CountdownHandler
 import com.countthis.app.challenges.PerfectRunHandler
@@ -19,6 +23,7 @@ import com.countthis.app.enums.DifficultyPreset
 import com.countthis.app.enums.GameMode
 import com.countthis.app.enums.PatternMode
 import com.countthis.app.managers.PreferencesHelper
+import com.countthis.app.managers.RecentGameModeHandler
 import com.countthis.app.managers.StatisticsManager
 import com.countthis.app.managers.ThemeManager
 import com.countthis.app.rendering.ItemRenderer
@@ -41,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var itemRenderer: ItemRenderer
     private lateinit var statsManager: StatisticsManager
     private lateinit var prefsHelper: PreferencesHelper
+    private lateinit var recentModeHandler: RecentGameModeHandler
     private lateinit var themeManager: ThemeManager
     private var currentStreak = 0
     private var maxStreak = 0
@@ -62,6 +68,16 @@ class MainActivity : AppCompatActivity() {
 
     // Per-button default colours for reset after feedback (populated from theme in onCreate)
     private lateinit var buttonColorRes: IntArray
+    private var isMeditativeMode = false
+    private var ambientToneGenerator: ToneGenerator? = null
+
+    private val ambientPulseRunnable = object : Runnable {
+        override fun run() {
+            if (!isMeditativeMode) return
+            startAmbientPulse()
+            handler.postDelayed(this, 3000L)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +86,7 @@ class MainActivity : AppCompatActivity() {
 
         itemRenderer = ItemRenderer(this)
         prefsHelper = PreferencesHelper(this)
+        recentModeHandler = RecentGameModeHandler(this)
         statsManager = StatisticsManager(this)
         themeManager = ThemeManager(this)
 
@@ -78,6 +95,7 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize button colors from theme
         buttonColorRes = themeManager.getAnswerButtonColors()
+        isMeditativeMode = prefsHelper.isMeditativeModeEnabled()
 
         readGameModeFromIntent()
         initializeChallengeHandler()
@@ -153,15 +171,15 @@ class MainActivity : AppCompatActivity() {
         val patternStr = intent.getStringExtra("PATTERN_MODE")
 
         gameMode = try {
-            GameMode.valueOf(modeStr ?: "TRAINING")
+            GameMode.valueOf(modeStr ?: recentModeHandler.getRecentMode().name)
         } catch (e: IllegalArgumentException) {
-            GameMode.TRAINING
+            recentModeHandler.getRecentMode()
         }
 
         startingPreset = try {
-            DifficultyPreset.valueOf(presetStr ?: "BEGINNER")
+            DifficultyPreset.valueOf(presetStr ?: prefsHelper.getSelectedDifficultyPreset().name)
         } catch (e: IllegalArgumentException) {
-            DifficultyPreset.BEGINNER
+            prefsHelper.getSelectedDifficultyPreset()
         }
 
         patternMode = try {
@@ -169,6 +187,9 @@ class MainActivity : AppCompatActivity() {
         } catch (e: IllegalArgumentException) {
             prefsHelper.getDefaultPatternMode()
         }
+
+        recentModeHandler.save(gameMode)
+        prefsHelper.saveSelectedDifficultyPreset(startingPreset)
     }
 
     private fun initializeChallengeHandler() {
@@ -216,6 +237,15 @@ class MainActivity : AppCompatActivity() {
         baseMaxItems = startingPreset.maxItems
         baseDisplayTime = startingPreset.displayTime
 
+        if (isMeditativeMode) {
+            baseMinItems = minOf(baseMinItems, 4)
+            baseMaxItems = minOf(baseMaxItems, 10)
+            if (baseMaxItems < baseMinItems) {
+                baseMaxItems = baseMinItems
+            }
+            baseDisplayTime = maxOf(baseDisplayTime, 4500L)
+        }
+
         currentDisplayTime = baseDisplayTime
         currentMaxItems = baseMaxItems
         currentLevel = 1
@@ -224,8 +254,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        isMeditativeMode = prefsHelper.isMeditativeModeEnabled()
         loadBaseSettings()
         updateDisplays()
+        if (isMeditativeMode) {
+            startAmbientSoundscape()
+        } else {
+            stopAmbientSoundscape()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopAmbientSoundscape()
     }
 
     private fun startNewRound() {
@@ -268,6 +309,9 @@ class MainActivity : AppCompatActivity() {
         binding.instructionText.visibility = View.GONE
         val itemTheme = prefsHelper.getItemTheme()
         itemRenderer.renderItems(binding.gameContainer, currentItemCount, itemTheme, patternMode)
+        if (isMeditativeMode) {
+            animateMeditativeTransition()
+        }
     }
 
     private fun hideItemsAndShowOptions() {
@@ -276,10 +320,10 @@ class MainActivity : AppCompatActivity() {
 
         val answers = generateAnswers()
 
-        binding.answer1Button.text = "A   ${answers[0]}"
-        binding.answer2Button.text = "B   ${answers[1]}"
-        binding.answer3Button.text = "C   ${answers[2]}"
-        binding.answer4Button.text = "D   ${answers[3]}"
+        binding.answer1Button.text = answers[0].toString()
+        binding.answer2Button.text = answers[1].toString()
+        binding.answer3Button.text = answers[2].toString()
+        binding.answer4Button.text = answers[3].toString()
 
         binding.answer1Button.tag = answers[0]
         binding.answer2Button.tag = answers[1]
@@ -295,7 +339,10 @@ class MainActivity : AppCompatActivity() {
      * Delegates to AnswerGenerator utility for testability.
      */
     private fun generateAnswers(): List<Int> {
-        return AnswerGenerator.generateOptions(currentItemCount)
+        return AnswerGenerator.generateOptions(
+            correct = currentItemCount,
+            answerRangePercent = prefsHelper.getAnswerRangePercent()
+        )
     }
 
     private fun checkAnswer(buttonIndex: Int) {
@@ -448,8 +495,13 @@ class MainActivity : AppCompatActivity() {
             else -> binding.answer4Button
         }
         val colorRes = if (correct) themeManager.getCorrectColor() else themeManager.getWrongColor()
-        button.backgroundTintList =
-            ColorStateList.valueOf(ContextCompat.getColor(this, colorRes))
+        val feedbackColor = ContextCompat.getColor(this, colorRes)
+        val appliedColor = if (isMeditativeMode) {
+            ColorUtils.blendARGB(feedbackColor, getVariantNeutralColor(), 0.35f)
+        } else {
+            feedbackColor
+        }
+        button.backgroundTintList = ColorStateList.valueOf(appliedColor)
     }
 
     private fun highlightCorrectAnswer() {
@@ -461,8 +513,14 @@ class MainActivity : AppCompatActivity() {
         )
         for (button in buttons) {
             if ((button.tag as? Int) == currentItemCount) {
+                val correctColor = ContextCompat.getColor(this, themeManager.getCorrectColor())
+                val appliedColor = if (isMeditativeMode) {
+                    ColorUtils.blendARGB(correctColor, getVariantNeutralColor(), 0.35f)
+                } else {
+                    correctColor
+                }
                 button.backgroundTintList =
-                    ColorStateList.valueOf(ContextCompat.getColor(this, themeManager.getCorrectColor()))
+                    ColorStateList.valueOf(appliedColor)
                 break
             }
         }
@@ -477,8 +535,23 @@ class MainActivity : AppCompatActivity() {
         )
         buttons.forEachIndexed { index, button ->
             button.backgroundTintList =
-                ColorStateList.valueOf(ContextCompat.getColor(this, buttonColorRes[index]))
+                ColorStateList.valueOf(resolveVariantColor(index))
+            button.alpha = if (isMeditativeMode) 0.92f else 1f
         }
+    }
+
+    private fun resolveVariantColor(index: Int): Int {
+        val baseColor = ContextCompat.getColor(this, buttonColorRes[index])
+        return if (isMeditativeMode) {
+            ColorUtils.blendARGB(baseColor, getVariantNeutralColor(), 0.32f)
+        } else {
+            baseColor
+        }
+    }
+
+    private fun getVariantNeutralColor(): Int {
+        val containerColor = ContextCompat.getColor(this, themeManager.getGameContainerBgColor())
+        return ColorUtils.blendARGB(containerColor, Color.WHITE, 0.08f)
     }
 
     private fun updateDisplays() {
@@ -487,9 +560,40 @@ class MainActivity : AppCompatActivity() {
         binding.levelText.text = "Level: $currentLevel | %.1fs | Max: $currentMaxItems".format(timeInSeconds)
     }
 
+    private fun animateMeditativeTransition() {
+        binding.gameContainer.alpha = 0.82f
+        binding.gameContainer.scaleX = 0.97f
+        binding.gameContainer.scaleY = 0.97f
+        binding.gameContainer.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(250L)
+            .start()
+    }
+
+    private fun startAmbientSoundscape() {
+        if (ambientToneGenerator == null) {
+            ambientToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 22)
+        }
+        handler.removeCallbacks(ambientPulseRunnable)
+        handler.post(ambientPulseRunnable)
+    }
+
+    private fun startAmbientPulse() {
+        ambientToneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP2, 180)
+    }
+
+    private fun stopAmbientSoundscape() {
+        handler.removeCallbacks(ambientPulseRunnable)
+        ambientToneGenerator?.stopTone()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         challengeHandler?.cleanup()
+        ambientToneGenerator?.release()
+        ambientToneGenerator = null
     }
 }

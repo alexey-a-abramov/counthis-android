@@ -1,0 +1,39 @@
+Funny SVG Sources (CC0 / Public Domain)
+
+These SVG files are used by CountThis for colorful/funny counting items.
+Source site: https://publicdomainvectors.org
+License shown on source pages: CC0 1.0 (Public Domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Imported files:
+- app/src/main/res/raw/funny_81398.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Alien-squid-monster/81398.html
+  Direct SVG: https://publicdomainvectors.org/svg/81398
+
+- app/src/main/res/raw/funny_36564.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Angry-monster/36564.html
+  Direct SVG: https://publicdomainvectors.org/svg/36564
+
+- app/src/main/res/raw/funny_81394.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Baby-monster/81394.html
+  Direct SVG: https://publicdomainvectors.org/svg/81394
+
+- app/src/main/res/raw/funny_87694.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Cartoon-Monster-Character/87694.html
+  Direct SVG: https://publicdomainvectors.org/svg/87694
+
+- app/src/main/res/raw/funny_25626.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Funny-game-monster-vector-image/25626.html
+  Direct SVG: https://publicdomainvectors.org/svg/25626
+
+- app/src/main/res/raw/funny_67049.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Funny-green-Monster/67049.html
+  Direct SVG: https://publicdomainvectors.org/svg/67049
+
+- app/src/main/res/raw/funny_39121.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Funny-monster/39121.html
+  Direct SVG: https://publicdomainvectors.org/svg/39121
+
+- app/src/main/res/raw/funny_87962.svg
+  Source: https://publicdomainvectors.org/en/free-clipart/Frankenstein-monster/87962.html
+  Direct SVG: https://publicdomainvectors.org/svg/87962
