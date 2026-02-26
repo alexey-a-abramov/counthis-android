@@ -22,6 +22,7 @@ import com.countthis.app.managers.PreferencesHelper
 import com.countthis.app.managers.StatisticsManager
 import com.countthis.app.managers.ThemeManager
 import com.countthis.app.rendering.ItemRenderer
+import com.countthis.app.utils.AnswerGenerator
 import java.util.UUID
 import kotlin.random.Random
 
@@ -290,49 +291,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Generates answer options for counting exercises using an adaptive algorithm
-     * that prevents sequential runs and ensures uniform distribution of the correct answer.
-     *
-     * Algorithm features:
-     * - Adaptive offset range based on correct count
-     * - Prevents consecutive sequences like [5, 6, 7, 8]
-     * - Uniformly randomizes correct answer position
-     * - Retry mechanism with gradual range expansion
-     *
-     * @param numOptions Total number of answer choices (default 4)
-     * @param maxAttempts Maximum retry attempts (default 200)
-     * @return List of shuffled answer options including the correct answer
+     * Generates answer options for counting exercises.
+     * Delegates to AnswerGenerator utility for testability.
      */
-    private fun generateAnswers(numOptions: Int = 4, maxAttempts: Int = 200): List<Int> {
-        val correct = currentItemCount
-
-        // 25% dispersion with minimum of 4 for small values to avoid sequential runs
-        val baseOffset = maxOf(4, (correct * 0.25).toInt())
-
-        for (attempt in 0 until maxAttempts) {
-            val maxOffset = baseOffset + (attempt / 30)  // expand range if stuck
-
-            // Build pool of possible offsets (excluding 0 and values that would be < 1)
-            val possibleOffsets = (-maxOffset..maxOffset)
-                .filter { o -> o != 0 && (correct + o) >= 1 }
-                .toList()
-
-            if (possibleOffsets.size < numOptions - 1) continue
-
-            // Sample offsets and build options
-            val selectedOffsets = possibleOffsets.shuffled().take(numOptions - 1)
-            val options = (selectedOffsets.map { correct + it } + correct).toMutableList()
-
-            // KEY RULE: reject consecutive sequences (e.g. [5,6,7,8])
-            // A run is consecutive iff spread == numOptions - 1
-            val spread = options.maxOrNull()!! - options.minOrNull()!!
-            if (spread <= numOptions - 1) continue
-
-            // Shuffle to randomize position of correct answer
-            return options.shuffled()
-        }
-
-        throw IllegalStateException("Could not generate valid options for correct=$correct")
+    private fun generateAnswers(): List<Int> {
+        return AnswerGenerator.generateOptions(currentItemCount)
     }
 
     private fun checkAnswer(buttonIndex: Int) {
