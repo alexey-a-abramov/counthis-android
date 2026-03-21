@@ -1,6 +1,7 @@
 package com.countthis.app
 
 import android.content.Intent
+import android.graphics.Color
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import com.countthis.app.databinding.ActivityMenuBinding
 import com.countthis.app.enums.DifficultyPreset
 import com.countthis.app.enums.GameMode
@@ -27,9 +29,11 @@ class MenuActivity : AppCompatActivity() {
     private val presets = DifficultyPreset.values()
     private var selectedPreset = DifficultyPreset.BEGINNER
     private var recentMode = GameMode.TRAINING
+    private lateinit var modeButtonBaseColors: IntArray
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         binding = ActivityMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         prefsHelper = PreferencesHelper(this)
@@ -38,14 +42,22 @@ class MenuActivity : AppCompatActivity() {
         themeManager = ThemeManager(this)
         selectedPreset = prefsHelper.getSelectedDifficultyPreset()
         recentMode = recentModeHandler.getRecentMode()
+        modeButtonBaseColors = IntArray(4)
 
         // Apply theme to UI
         applyTheme()
 
         setupLevelSpinner()
         setupGameTypeButtons()
+        setupMeditativeMenuToggle()
         setupBottomButtons()
+        applyMenuMeditativeState(prefsHelper.isMeditativeModeEnabled())
         updateLastSession()
+
+        // Auto-launch game if meditative mode is enabled and we're not returning from a session
+        if (prefsHelper.isMeditativeModeEnabled() && intent.getBooleanExtra("EXIT_MEDITATIVE", false) != true) {
+            onModeSelected(recentMode)
+        }
     }
 
     override fun onResume() {
@@ -53,6 +65,8 @@ class MenuActivity : AppCompatActivity() {
         selectedPreset = prefsHelper.getSelectedDifficultyPreset()
         recentMode = recentModeHandler.getRecentMode()
         binding.levelSpinner.setSelection(presets.indexOfFirst { it == selectedPreset })
+        binding.menuMeditativeCheckbox.isChecked = prefsHelper.isMeditativeModeEnabled()
+        applyMenuMeditativeState(binding.menuMeditativeCheckbox.isChecked)
         updateRecentModeHighlight()
         updateLastSession()
     }
@@ -79,18 +93,10 @@ class MenuActivity : AppCompatActivity() {
 
         // Apply game mode button colors
         val answerColors = themeManager.getAnswerButtonColors()
-        binding.trainingButton.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(this, answerColors[0])
-        )
-        binding.timeAttackButton.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(this, answerColors[1])
-        )
-        binding.perfectRunButton.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(this, answerColors[2])
-        )
-        binding.countdownButton.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(this, answerColors[3])
-        )
+        modeButtonBaseColors = IntArray(answerColors.size) { index ->
+            ContextCompat.getColor(this, answerColors[index])
+        }
+        applyModeButtonSaturation(prefsHelper.isMeditativeModeEnabled())
 
         // Apply statistics button color
         binding.statisticsButton.backgroundTintList = ColorStateList.valueOf(
@@ -128,6 +134,18 @@ class MenuActivity : AppCompatActivity() {
             onModeSelected(GameMode.COUNTDOWN)
         }
         updateRecentModeHighlight()
+    }
+
+    private fun setupMeditativeMenuToggle() {
+        binding.menuMeditativeCheckbox.isChecked = prefsHelper.isMeditativeModeEnabled()
+        binding.menuMeditativeCheckbox.setOnCheckedChangeListener { _, checked ->
+            prefsHelper.setMeditativeModeEnabled(checked)
+            applyMenuMeditativeState(checked)
+            updateLastSession()
+            if (checked) {
+                onModeSelected(recentMode)
+            }
+        }
     }
 
     private fun setupBottomButtons() {
@@ -174,7 +192,45 @@ class MenuActivity : AppCompatActivity() {
         button.scaleY = if (isRecent) 1.03f else 1f
     }
 
+    private fun applyMenuMeditativeState(enabled: Boolean) {
+        binding.topBar.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.settingsButton.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.selectLevelLabel.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.levelCard.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.gameTypeLabel.visibility = if (enabled) View.GONE else View.VISIBLE
+        binding.statisticsButton.visibility = if (enabled) View.GONE else View.VISIBLE
+
+        if (enabled) {
+            binding.lastSessionCard.visibility = View.GONE
+        }
+
+        applyModeButtonSaturation(enabled)
+        updateRecentModeHighlight()
+    }
+
+    private fun applyModeButtonSaturation(meditative: Boolean) {
+        val neutral = ColorUtils.blendARGB(
+            ContextCompat.getColor(this, themeManager.getBackgroundColor()),
+            Color.WHITE,
+            0.08f
+        )
+        val saturation = if (meditative) 0.65f else 0f
+        val colors = modeButtonBaseColors.map { color ->
+            ColorUtils.blendARGB(color, neutral, saturation)
+        }
+
+        binding.trainingButton.backgroundTintList = ColorStateList.valueOf(colors[0])
+        binding.timeAttackButton.backgroundTintList = ColorStateList.valueOf(colors[1])
+        binding.perfectRunButton.backgroundTintList = ColorStateList.valueOf(colors[2])
+        binding.countdownButton.backgroundTintList = ColorStateList.valueOf(colors[3])
+    }
+
     private fun updateLastSession() {
+        if (binding.menuMeditativeCheckbox.isChecked) {
+            binding.lastSessionCard.visibility = View.GONE
+            return
+        }
+
         val stats = statsManager.getStatistics()
         val last = stats.sessions.lastOrNull()
 

@@ -58,6 +58,7 @@
 
             <!-- Level selector -->
             <TextView
+                android:id="@+id/selectLevelLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/select_level"
@@ -67,6 +68,7 @@
                 android:layout_marginBottom="4dp" />
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/levelCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
@@ -85,6 +87,7 @@
 
             <!-- Game type section -->
             <TextView
+                android:id="@+id/gameTypeLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/game_type"
@@ -249,6 +252,15 @@
                 android:textColor="@color/white"
                 app:backgroundTint="@color/header_bg"
                 app:cornerRadius="12dp" />
+
+            <CheckBox
+                android:id="@+id/menuMeditativeCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/menu_meditative_toggle"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
 
         </LinearLayout>
     </ScrollView>

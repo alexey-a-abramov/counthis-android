@@ -50,6 +50,10 @@ class PreferencesHelper(context: Context) {
         return prefs.getBoolean("meditative_mode", false)
     }
 
+    fun setMeditativeModeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("meditative_mode", enabled).apply()
+    }
+
     fun saveSelectedDifficultyPreset(preset: DifficultyPreset) {
         prefs.edit().putString("selected_difficulty_preset", preset.name).apply()
     }

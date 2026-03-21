@@ -9,6 +9,8 @@ import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private var maxStreak = 0
     private var sessionStartTime = 0L
     private var challengeStarted = false
+    private lateinit var gestureDetector: GestureDetector
 
     // Progressive difficulty variables
     private var currentLevel = 1
@@ -90,12 +93,24 @@ class MainActivity : AppCompatActivity() {
         statsManager = StatisticsManager(this)
         themeManager = ThemeManager(this)
 
+        isMeditativeMode = prefsHelper.isMeditativeModeEnabled()
+
+        // Initialize gesture detector for meditative mode exit
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (isMeditativeMode && (Math.abs(velocityX) > 1000 || Math.abs(velocityY) > 1000)) {
+                    exitMeditativeMode()
+                    return true
+                }
+                return false
+            }
+        })
+
         // Apply theme to UI
         applyTheme()
 
         // Initialize button colors from theme
         buttonColorRes = themeManager.getAnswerButtonColors()
-        isMeditativeMode = prefsHelper.isMeditativeModeEnabled()
 
         readGameModeFromIntent()
         initializeChallengeHandler()
@@ -108,6 +123,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.readyButton.setOnClickListener { onReadyButtonClicked() }
+        binding.gameContainer.setOnClickListener {
+            if (isMeditativeMode && binding.answerContainer.visibility != View.VISIBLE) {
+                onReadyButtonClicked()
+            }
+        }
 
         binding.answer1Button.setOnClickListener { checkAnswer(1) }
         binding.answer2Button.setOnClickListener { checkAnswer(2) }
@@ -116,6 +136,27 @@ class MainActivity : AppCompatActivity() {
 
         updateDisplays()
         updateChallengeUI()
+
+        if (isMeditativeMode) {
+            beginMeditativeAutoStart()
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (isMeditativeMode) {
+            gestureDetector.onTouchEvent(ev)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun exitMeditativeMode() {
+        prefsHelper.setMeditativeModeEnabled(false)
+        val intent = Intent(this, MenuActivity::class.java).apply {
+            putExtra("EXIT_MEDITATIVE", true)
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 
     /**
@@ -132,11 +173,22 @@ class MainActivity : AppCompatActivity() {
         binding.gameContainer.setBackgroundColor(
             ContextCompat.getColor(this, themeManager.getGameContainerBgColor())
         )
+        binding.gameContainer.elevation = if (isMeditativeMode) 0f else 2f * resources.displayMetrics.density
 
         // Apply header colors
         binding.topBar.setBackgroundColor(
             ContextCompat.getColor(this, themeManager.getHeaderBgColor())
         )
+
+        // Meditative Mode: Hide non-essential UI
+        if (isMeditativeMode) {
+            binding.topBar.visibility = View.GONE
+            binding.challengeStatusBar.visibility = View.GONE
+            binding.startButton.visibility = View.GONE
+        } else {
+            binding.topBar.visibility = View.VISIBLE
+            binding.challengeStatusBar.visibility = View.VISIBLE
+        }
 
         // Apply text colors
         binding.scoreText.setTextColor(
@@ -207,6 +259,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateChallengeUI() {
+        if (isMeditativeMode) {
+            binding.timerText.visibility = View.GONE
+            binding.streakText.visibility = View.GONE
+            binding.challengeStatusText.visibility = View.GONE
+            return
+        }
+        
         when (gameMode) {
             GameMode.TIME_ATTACK -> {
                 binding.timerText.text = "60s"
@@ -237,15 +296,6 @@ class MainActivity : AppCompatActivity() {
         baseMaxItems = startingPreset.maxItems
         baseDisplayTime = startingPreset.displayTime
 
-        if (isMeditativeMode) {
-            baseMinItems = minOf(baseMinItems, 4)
-            baseMaxItems = minOf(baseMaxItems, 10)
-            if (baseMaxItems < baseMinItems) {
-                baseMaxItems = baseMinItems
-            }
-            baseDisplayTime = maxOf(baseDisplayTime, 4500L)
-        }
-
         currentDisplayTime = baseDisplayTime
         currentMaxItems = baseMaxItems
         currentLevel = 1
@@ -255,6 +305,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isMeditativeMode = prefsHelper.isMeditativeModeEnabled()
+        applyTheme()
         loadBaseSettings()
         updateDisplays()
         if (isMeditativeMode) {
@@ -279,23 +330,43 @@ class MainActivity : AppCompatActivity() {
         binding.answerContainer.visibility = View.GONE
         binding.readyButton.visibility = View.GONE
         binding.gameContainer.removeAllViews()
+        binding.gameContainer.alpha = 1f
+        binding.gameContainer.scaleX = 1f
+        binding.gameContainer.scaleY = 1f
 
         val effectiveMaxItems = maxOf(baseMinItems, currentMaxItems)
         currentItemCount = Random.nextInt(baseMinItems, effectiveMaxItems + 1)
 
-        showInstruction()
-
-        handler.postDelayed({
+        if (isMeditativeMode) {
             displayItems()
-            binding.readyButton.visibility = View.VISIBLE
-
-            displayTimerRunnable = Runnable { hideItemsAndShowOptions() }
-            handler.postDelayed(displayTimerRunnable!!, currentDisplayTime)
-        }, 1500)
+            binding.readyButton.visibility = View.GONE
+            val fadeOutStart = maxOf(100L, currentDisplayTime - 350L)
+            displayTimerRunnable = Runnable {
+                binding.gameContainer.animate()
+                    .alpha(0f)
+                    .setDuration(300L)
+                    .withEndAction {
+                        hideItemsAndShowOptions()
+                        binding.gameContainer.alpha = 1f
+                    }
+                    .start()
+            }
+            handler.postDelayed(displayTimerRunnable!!, fadeOutStart)
+        } else {
+            showInstruction()
+            handler.postDelayed({
+                displayItems()
+                binding.readyButton.visibility = View.VISIBLE
+                displayTimerRunnable = Runnable { hideItemsAndShowOptions() }
+                handler.postDelayed(displayTimerRunnable!!, currentDisplayTime)
+            }, 1500)
+        }
     }
 
     private fun onReadyButtonClicked() {
         displayTimerRunnable?.let { handler.removeCallbacks(it) }
+        binding.gameContainer.animate().cancel()
+        binding.gameContainer.alpha = 1f
         binding.readyButton.visibility = View.GONE
         hideItemsAndShowOptions()
     }
@@ -303,6 +374,14 @@ class MainActivity : AppCompatActivity() {
     private fun showInstruction() {
         binding.instructionText.text = getString(R.string.count_them)
         binding.instructionText.visibility = View.VISIBLE
+    }
+
+    private fun beginMeditativeAutoStart() {
+        if (isMeditativeMode) {
+            startNewRound()
+        } else if (binding.startButton.visibility == View.VISIBLE) {
+            startNewRound()
+        }
     }
 
     private fun displayItems() {
@@ -331,6 +410,7 @@ class MainActivity : AppCompatActivity() {
         binding.answer4Button.tag = answers[3]
 
         resetButtonColors()
+        binding.questionText.visibility = if (isMeditativeMode) View.GONE else View.VISIBLE
         binding.answerContainer.visibility = View.VISIBLE
     }
 
@@ -361,12 +441,14 @@ class MainActivity : AppCompatActivity() {
             correctAnswers++
             currentStreak++
             maxStreak = maxOf(maxStreak, currentStreak)
-            highlightButton(buttonIndex, true)
+            if (!isMeditativeMode) highlightButton(buttonIndex, true)
             progressDifficulty()
         } else {
             currentStreak = 0
-            highlightButton(buttonIndex, false)
-            highlightCorrectAnswer()
+            if (!isMeditativeMode) {
+                highlightButton(buttonIndex, false)
+                highlightCorrectAnswer()
+            }
         }
 
         val challengeStatus = challengeHandler?.onRoundComplete(isCorrect)
@@ -381,11 +463,12 @@ class MainActivity : AppCompatActivity() {
         updateChallengeStatus()
         setAnswerButtonsEnabled(false)
 
+        val delay = if (isMeditativeMode) 350L else 1000L
         handler.postDelayed({
             setAnswerButtonsEnabled(true)
             binding.answerContainer.visibility = View.GONE
             startNewRound()
-        }, 1000)
+        }, delay)
     }
 
     private fun setAnswerButtonsEnabled(enabled: Boolean) {
@@ -396,6 +479,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateChallengeStatus() {
+        if (isMeditativeMode) return
+
         when (gameMode) {
             GameMode.PERFECT_RUN, GameMode.TRAINING -> {
                 binding.streakText.text = "Streak: $currentStreak"
@@ -467,6 +552,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.startButton.visibility = View.VISIBLE
         binding.answerContainer.visibility = View.GONE
+
+        if (isMeditativeMode) {
+            beginMeditativeAutoStart()
+        }
     }
 
     /**
@@ -497,7 +586,7 @@ class MainActivity : AppCompatActivity() {
         val colorRes = if (correct) themeManager.getCorrectColor() else themeManager.getWrongColor()
         val feedbackColor = ContextCompat.getColor(this, colorRes)
         val appliedColor = if (isMeditativeMode) {
-            ColorUtils.blendARGB(feedbackColor, getVariantNeutralColor(), 0.35f)
+            ColorUtils.blendARGB(feedbackColor, getVariantNeutralColor(), 0.65f)
         } else {
             feedbackColor
         }
@@ -515,7 +604,7 @@ class MainActivity : AppCompatActivity() {
             if ((button.tag as? Int) == currentItemCount) {
                 val correctColor = ContextCompat.getColor(this, themeManager.getCorrectColor())
                 val appliedColor = if (isMeditativeMode) {
-                    ColorUtils.blendARGB(correctColor, getVariantNeutralColor(), 0.35f)
+                    ColorUtils.blendARGB(correctColor, getVariantNeutralColor(), 0.65f)
                 } else {
                     correctColor
                 }
@@ -536,14 +625,14 @@ class MainActivity : AppCompatActivity() {
         buttons.forEachIndexed { index, button ->
             button.backgroundTintList =
                 ColorStateList.valueOf(resolveVariantColor(index))
-            button.alpha = if (isMeditativeMode) 0.92f else 1f
+            button.alpha = if (isMeditativeMode) 0.85f else 1f
         }
     }
 
     private fun resolveVariantColor(index: Int): Int {
         val baseColor = ContextCompat.getColor(this, buttonColorRes[index])
         return if (isMeditativeMode) {
-            ColorUtils.blendARGB(baseColor, getVariantNeutralColor(), 0.32f)
+            ColorUtils.blendARGB(baseColor, getVariantNeutralColor(), 0.65f)
         } else {
             baseColor
         }
@@ -555,15 +644,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDisplays() {
+        if (isMeditativeMode) {
+            binding.scoreText.text = ""
+            binding.levelText.text = ""
+            return
+        }
         binding.scoreText.text = getString(R.string.score, correctAnswers, totalRounds)
         val timeInSeconds = currentDisplayTime / 1000.0
         binding.levelText.text = "Level: $currentLevel | %.1fs | Max: $currentMaxItems".format(timeInSeconds)
     }
 
     private fun animateMeditativeTransition() {
-        binding.gameContainer.alpha = 0.82f
-        binding.gameContainer.scaleX = 0.97f
-        binding.gameContainer.scaleY = 0.97f
+        binding.gameContainer.animate().cancel()
+        binding.gameContainer.alpha = 0f
+        binding.gameContainer.scaleX = 0.95f
+        binding.gameContainer.scaleY = 0.95f
         binding.gameContainer.animate()
             .alpha(1f)
             .scaleX(1f)

@@ -22,6 +22,7 @@
     <string name="mode_countdown">Countdown</string>
     <string name="last_session">LAST SESSION</string>
     <string name="statistics">Statistics</string>
+    <string name="menu_meditative_toggle">Meditative Menu</string>
 
     <!-- Settings Categories -->
     <string name="category_appearance">Appearance</string>
